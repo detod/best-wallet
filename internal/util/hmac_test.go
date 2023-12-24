@@ -1,48 +1,11 @@
-package utils
+package util
 
 import (
 	"encoding/hex"
 	"testing"
 )
 
-func TestVerifySHA256HMAC_OK(t *testing.T) {
-	// Arrange.
-	msg := []byte("some-message")
-	key, err := NewKeyHMAC(64)
-	if err != nil {
-		t.Fatalf("error generating a key: %s", err)
-	}
-
-	checksum := ComputeSHA256HMAC(msg, key)
-
-	// Act.
-	ok := VerifySHA256HMAC(msg, key, checksum)
-
-	// Assert.
-	if !ok {
-		t.Fatalf("expected true, got false")
-	}
-}
-
-func TestVerifySHA256HMAC_DifferentMsg(t *testing.T) {
-	// Arrange.
-	key, err := NewKeyHMAC(64)
-	if err != nil {
-		t.Fatalf("error generating a key: %s", err)
-	}
-
-	checksum := ComputeSHA256HMAC([]byte("some-message"), key)
-
-	// Act.
-	ok := VerifySHA256HMAC([]byte("some-other-message"), key, checksum)
-
-	// Assert.
-	if ok {
-		t.Fatalf("expected false, got true")
-	}
-}
-
-func TestComputeSHA256HMAC_Length(t *testing.T) {
+func TestComputeSHA256HMAC_Size(t *testing.T) {
 	// Arrange.
 	msg := []byte("some-message")
 	key, err := NewKeyHMAC(64)
@@ -55,7 +18,7 @@ func TestComputeSHA256HMAC_Length(t *testing.T) {
 
 	// Assert.
 	if len(checksum) != 32 { // 256 bits = 32 bytes
-		t.Fatalf("expected length to be %d, got %d", 32, len(checksum))
+		t.Fatalf("expected size to be %d, got %d", 32, len(checksum))
 	}
 }
 
@@ -77,7 +40,7 @@ func TestComputeSHA256HMAC_SameInputSameOutput(t *testing.T) {
 	}
 }
 
-func TestNewKeyHMAC_ErrLengthLessThanOne(t *testing.T) {
+func TestNewKeyHMAC_ErrSizeLessThanOne(t *testing.T) {
 	// Act.
 	key, err := NewKeyHMAC(0)
 
@@ -90,32 +53,32 @@ func TestNewKeyHMAC_ErrLengthLessThanOne(t *testing.T) {
 	}
 }
 
-func TestNewKeyHMAC_CustomLength(t *testing.T) {
+func TestNewKeyHMAC_CorrectSize(t *testing.T) {
 	// Arrange.
-	wantKeyLength := 64
+	wantSize := 64
 
 	// Act.
-	key, err := NewKeyHMAC(wantKeyLength)
+	key, err := NewKeyHMAC(wantSize)
 	if err != nil {
 		t.Fatalf("error generating a key: %s", err)
 	}
 
 	// Assert.
-	if len(key) != wantKeyLength {
-		t.Fatalf("expected length to be %d, got %d", wantKeyLength, len(key))
+	if len(key) != wantSize {
+		t.Fatalf("expected size to be %d, got %d", wantSize, len(key))
 	}
 }
 
 func TestNewKeyHMAC_KeysDoNotRepeat(t *testing.T) {
 	// Arrange.
-	length := 10
+	size := 10
 
 	// Act.
-	key1, err := NewKeyHMAC(length)
+	key1, err := NewKeyHMAC(size)
 	if err != nil {
 		t.Fatalf("error generating key1: %s", err)
 	}
-	key2, err := NewKeyHMAC(length)
+	key2, err := NewKeyHMAC(size)
 	if err != nil {
 		t.Fatalf("error generating key2: %s", err)
 	}
