@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"crypto/hmac"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -18,7 +17,7 @@ const keyIDHeader = "BestWallet-Key-ID"
 
 // HMACKeyFetcher can fetch an HMAC secret key by a corresponding key ID.
 // The key can be used for computing a signature i.e. signing a request.
-type HMACKeyFetcher func(ctx context.Context, keyID string) ([]byte, error)
+type HMACKeyFetcher func(ctx context.Context, keyID string) (key []byte, found bool, err error)
 
 // HMACVerifier will check if the request was signed by an authorized client.
 // Signing a request requires a secret key that is exchanged ahead of time
@@ -31,32 +30,27 @@ type HMACKeyFetcher func(ctx context.Context, keyID string) ([]byte, error)
 //
 // The client then sends the signature as part of the request (in a header)
 // thus proving its identity as well as the integrity of the request payload.
-// This function will verify the signature by signing the request again
-// using the same method as above. If the resulting signature is exactly the
-// same as the signature provided by the client, verification succeeds,
-// otherwise the request is denied.
+// This function will verify the signature by re-calculating the signature
+// itself, using the same method as above, and compare it to the signature
+// provided by the client. If the signatures are the same, verification is
+// successful and the server can continue processing the request. If the
+// signatures are not the same, verificaion failed and the request is denied.
 //
 // Note that this is only a demo implementation and it's missing a broader scope
 // of the message to sign (URI, HTTP method, timestamp/nonce, headers).
 func HMACVerifier(fetchKey HMACKeyFetcher) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		sig := c.GetHeader(sigHeader)
-		if sig == "" {
-			c.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-		checksum, err := base64.StdEncoding.DecodeString(sig)
-		if err != nil {
+		sig, keyID := c.GetHeader(sigHeader), c.GetHeader(keyIDHeader)
+		if sig == "" || keyID == "" {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
-		keyID := c.GetHeader(keyIDHeader)
-		if keyID == "" {
+		key, found, err := fetchKey(c.Request.Context(), keyID)
+		if !found {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
-		key, err := fetchKey(c.Request.Context(), keyID)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
@@ -69,9 +63,10 @@ func HMACVerifier(fetchKey HMACKeyFetcher) gin.HandlerFunc {
 		}
 
 		msg := []byte(fmt.Sprintf("%s%s", body, key))
-		wantChecksum := util.ComputeSHA256HMAC(msg, key)
+		sum := util.ComputeSHA256HMAC(msg, key)
+		wantSig := base64.StdEncoding.EncodeToString(sum)
 
-		if !hmac.Equal(checksum, wantChecksum) {
+		if sig != wantSig {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
