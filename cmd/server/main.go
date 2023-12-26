@@ -47,7 +47,6 @@ func main() {
 	r := gin.Default()
 	v1 := r.Group("/api/v1")
 	{
-
 		v1.POST("/accounts", hmacVerifier, createAcc.Handle)      // Create account.
 		v1.GET("/accounts/:number", hmacVerifier, readAcc.Handle) // Read account data.
 
