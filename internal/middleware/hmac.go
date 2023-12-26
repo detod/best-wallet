@@ -42,13 +42,13 @@ func HMACVerifier(fetchKey HMACKeyFetcher) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		sig, keyID := c.GetHeader(sigHeader), c.GetHeader(keyIDHeader)
 		if sig == "" || keyID == "" {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatus(http.StatusUnauthorized) // TODO log reason.
 			return
 		}
 
 		key, found, err := fetchKey(c.Request.Context(), keyID)
 		if !found {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatus(http.StatusUnauthorized) // TODO log reason.
 			return
 		}
 		if err != nil {
@@ -67,7 +67,7 @@ func HMACVerifier(fetchKey HMACKeyFetcher) gin.HandlerFunc {
 		wantSig := base64.StdEncoding.EncodeToString(sum)
 
 		if sig != wantSig {
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatus(http.StatusUnauthorized) // TODO log reason.
 			return
 		}
 
