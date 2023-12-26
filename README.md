@@ -58,6 +58,16 @@ implementing the solution:
     - Favor eventual consistency where possible, less coordination and contention.
     - Do maintenance off peak hours (auditing, heavy batch jobs).
 
+### Open questions
+
+- Unique customer identifier that correlates accounts of the same customer?
+- Should KYC be done only once for a customer, regardless of the number of
+accounts they open?
+- Allow new account creation requests while there is one already pending for the
+same user?
+- Should deposits (money coming inside the wallet) have a KYT?
+- Is exchanging funds with external systems in the scope of this solution?
+
 ### Implementation details
 
 - CreateAccount endpoint stores the intent to open an account in a DB row and
@@ -83,16 +93,6 @@ we need to validate every new "debit" TX against the "available" balance before
 reserving the funds. Checking the "available" balance and reserving the funds
 needs to be atomic + serialized per account.
 
-### Open questions
-
-- Unique customer identifier that correlates accounts of the same customer?
-- Should KYC be done only once for a customer, regardless of the number of
-accounts they open?
-- Allow new account creation requests while there is one already pending for the
-same user?
-- Should deposits (money coming inside the wallet) have a KYT?
-- Is exchaning funds with external systems in the scope of this solution?
-
 ### Code structure
 
 A description of a code structure I really like, especially for MVPs.
@@ -109,6 +109,7 @@ event consumers, scheduled jobs etc. I call these the "entrypoints" or
 
 The code structure looks like this:
 
+```
 /cmd -> binaries (servers/consumers, background jobs, CLIs)
 /internal -> anything that you don't want exposed to the outside world
     /handler -> http handlers
@@ -116,9 +117,11 @@ The code structure looks like this:
     /consumer -> event consumers
     /domain -> anything domain specific, used by folders above
     /util -> anything non-domain specific, used by folders above
+```
 
 It's organized in layers:
 
+```
 Layer 0: cmd
 Layer 1: handler, middleware, consumer, job
 Layer 2: domain
@@ -126,6 +129,7 @@ Layer 3: util
 - - - - - - - -
 Layer 4: 3rd party code on github, gitlab...
 Layer 5: go stdlib
+```
 
 Semantics:
 
