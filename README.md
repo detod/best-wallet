@@ -82,6 +82,7 @@ accounts they open?
 - Is negative balance allowed?
 - Should HMAC validation be client app scoped or customer scoped?
     - Customer authN/authZ?
+- Wallet currency? (major/minor units, will have impact on data types)
 
 ### Implementation details
 
