@@ -3,6 +3,11 @@
 - Use docker-compose to bring the environment up.
 - Run tests with `go test -v ./...`
 
+## TODO
+- HMAC keys storage
+- Implementation for money transfers
+- Some TODOs around the code
+
 ## Gameplan
 
 There are 2 main things that guide the decisions I've made (or will make) while
@@ -65,28 +70,27 @@ implementing the solution:
 - Should KYC be done only once for a customer, regardless of the number of
 accounts they open?
     - Assuming yes for now.
+- Is there a limit on how many accounts a customer can have?
+- What is the lifecycle of a customer/personal account? Can they be closed, frozen?
+- What format should the account number be?
+- Can a customer transfer funds to an account in the wallet that belongs to another customer?
 - Is exchanging funds with external systems (deposit or withdrawal) in the scope of this solution?
     - Should deposits (money coming from outside) have a KYT?
-- What is the lifecycle of a customer/personal account? Can they be closed, frozen?
 - Is negative balance allowed?
 - Should HMAC validation be client app scoped or customer scoped?
     - Customer authN/authZ?
-- What format should the account number be?
-- Can a customer transfer funds to an account in the wallet that belongs to another customer?
-- Is there a limit on how many accounts a customer can have?
 
 ### Implementation details
 
 - CreateAccount endpoint stores the intent to open an account in a DB row and
 kickstarts a background process that will handle the KYC process. It returns
-immediately to the client without waiting for a result. The process will result
-with either an open account or a failed KYC.
-- A transaction can have three possible states "pending", "cleared", or "failed".
+immediately to the client without waiting for a result.
+- A transaction can be "pending", "cleared", or "failed".
     - Pending transactions are going through (or will go through) KYT.
     - If KYT fails, the transaction fails.
     - Failed transaction cannot be retried, new transaction is needed.
     - If KYT suceeds, the transaction will be subject to clearing.
-- All transactions are recoreded in a ledger with double book-keeping.
+- All transactions are recoreded in a ledger with double bookkeeping.
 - A transaction can be of type "debit" (deducts from the account) or "credit"
 (adds to the account).
 - Existing transactions in the ledger cannot be modified.
@@ -112,12 +116,13 @@ initiated by actions such as API requests from client apps, background jobs,
 webhooks, raised events etc. The transitions are carried out by http handlers,
 event consumers, scheduled jobs etc. I call these the "entrypoints" or
 "use-cases". They carry names like "create account", "read account", "deposit",
-"withdraw", "transfer" etc.
+"withdraw", "transfer" etc. They become first-class citizens with dedicated
+files and structs, sitting at the "top" of the dependency hierarchy.
 
 The code structure looks like this:
 
 ```
-/cmd -> binaries (servers/consumers, background jobs, CLIs)
+/cmd -> binaries (describes the process topology, servers/consumers, background jobs, CLIs)
 /internal -> anything that you don't want exposed to the outside world
     /handler -> http handlers
     /middleware -> http middleware (a special form of handler)
@@ -129,19 +134,19 @@ The code structure looks like this:
 It's organized in layers:
 
 ```
-Layer 0: cmd
-Layer 1: handler, middleware, consumer, job
-Layer 2: domain
-Layer 3: util
+Layer A: cmd
+Layer B: handler, middleware, consumer, job
+Layer C: domain
+Layer D: util
 - - - - - - - -
-Layer 4: 3rd party code on github, gitlab...
-Layer 5: go stdlib
+Layer E: 3rd party code on github, gitlab...
+Layer F: go stdlib
 ```
 
 Semantics:
 
 - A layer can depend on layers below, but not on layers above. Example, code in
-Layer 1 can depend on code in Layer 2 or 3, but not the other way around.
+Layer A can depend on code in Layer B or C, but not the other way around.
 - Elements in the same layer should not depend on eachother e.g handlers <->
 consumers.
 - As you go down the layers, the code gets more generic and reusable. It makes
@@ -155,6 +160,3 @@ you can introduce sub-layers for namespacing.
 
 Layers are important in Go since circular package dependencies are not allowed.
 Note: A lot of things here can be subjective, I'm not religious about them :)
-
-## Table schema
-
