@@ -1,0 +1,9 @@
+CREATE TABLE accounts (
+    id UUID NOT NULL PRIMARY KEY,
+    customer_id UUID NOT NULL,
+    number VARCHAR NOT NULL,
+    balance BIGINT NOT NULL,
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC'),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
+);

@@ -9,8 +9,20 @@ services:
         restart: true
       redis:
         condition: service_started
+      backend-migrate:
+        condition: service_completed_successfully
     ports:
       - '80:8080'
+
+  backend-migrate:
+    build: .
+    env_file:
+      - ./local.env
+    command: /migrate -database postgres://postgres:asd9fwepub83lf@postgres:5432/bestwallet?sslmode=disable -path /app/db-migrations up
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
 
   postgres:
     image: postgres:15.5-alpine

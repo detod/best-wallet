@@ -61,12 +61,19 @@ implementing the solution:
 ### Open questions
 
 - Unique customer identifier that correlates accounts of the same customer?
+    - Assuming yes for now.
 - Should KYC be done only once for a customer, regardless of the number of
 accounts they open?
-- Allow new account creation requests while there is one already pending for the
-same user?
-- Should deposits (money coming inside the wallet) have a KYT?
-- Is exchanging funds with external systems in the scope of this solution?
+    - Assuming yes for now.
+- Is exchanging funds with external systems (deposit or withdrawal) in the scope of this solution?
+    - Should deposits (money coming from outside) have a KYT?
+- What is the lifecycle of a customer/personal account? Can they be closed, frozen?
+- Is negative balance allowed?
+- Should HMAC validation be client app scoped or customer scoped?
+    - Customer authN/authZ?
+- What format should the account number be?
+- Can a customer transfer funds to an account in the wallet that belongs to another customer?
+- Is there a limit on how many accounts a customer can have?
 
 ### Implementation details
 
@@ -148,3 +155,6 @@ you can introduce sub-layers for namespacing.
 
 Layers are important in Go since circular package dependencies are not allowed.
 Note: A lot of things here can be subjective, I'm not religious about them :)
+
+## Table schema
+
