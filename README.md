@@ -6,6 +6,8 @@
 ## TODO
 - HMAC keys storage
 - Implementation for money transfers
+- Caching
+- API docs
 - Some TODOs around the code
 
 ## Gameplan
