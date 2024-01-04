@@ -8,6 +8,7 @@
 - Implementation for money transfers
 - Caching
 - API docs
+- Integration tests
 - Some TODOs around the code
 
 ## Gameplan
